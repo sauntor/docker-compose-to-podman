@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if (( $UID == 0 )); then
+  DOCKER_HOST="unix:///run/podman/podman.sock"
+else
+  DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
+fi
+export DOCKER_HOST
+
+exec /usr/local/bin/docker-compose-linux-$(uname -m) $@

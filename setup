@@ -1,0 +1,69 @@
+#!/bin/bash
+
+__binary="docker-compose-linux-$(uname -m)"
+
+__install() {
+  __dir=$(mktemp -d)
+  
+  __cleanup() {
+    echo -e "\nCleaning..."
+    echo "remove temp files: $__dir"
+    rm -rf $__dir
+    echo 'Cleaned up!'
+  }
+  
+  trap __cleanup EXIT
+  
+  pushd $__dir > /dev/null
+  
+  echo "Fetch versions..."
+  git init 2>/dev/null >/dev/null
+  git remote add origin https://github.com/docker/compose.git > /dev/null
+  
+  __versions=$(git ls-remote --tags -q | cut -f2 | cut -d/ -f3 | sed -E -e '/(^v?[01]|\{\}|docs)/d' | sort -nr | head -n 10)
+  
+  echo 'Please select a version:'
+  select __version in $__versions; do
+    if [ -z "$__version" ]; then
+      echo "No version selected!"
+      exit 1
+    else
+      break
+    fi
+  done
+  
+  echo "Downloading binary for $__version ..."
+  wget -q --show-progress https://github.com/docker/compose/releases/download/$__version/$__binary || exit 1
+  popd > /dev/null
+
+  echo "Installing files..."
+  echo -n "Install binary: "
+  sudo install -vm 555 $__dir/$__binary /usr/local/bin/
+  echo -n "Install wrapper script: "
+  sudo install -vm 555 podman-compose /usr/local/bin/
+  echo -n "Install symbol link: "
+  sudo ln -vs /usr/local/bin/podman-compose /usr/local/bin/docker-compose
+
+  echo "Completed!"
+}
+
+__remove() {
+  sudo rm -v /usr/local/bin/$__binary 2>/dev/null
+  sudo rm -v /usr/local/bin/{docker,podman}-compose 2>/dev/null
+
+  echo "Completed!"
+}
+
+case "$1" in
+  install|-i)
+    if [ -e /usr/local/bin/$__binary ]; then
+      echo "Already installed, you may uninstall first, exit now."
+      exit 1;
+    fi
+    __install
+    ;;
+  remove|-r)
+    __remove;;
+  *)
+    echo -e "usage:\n\t$0 -i|install|-r|remove\n"
+esac
