@@ -11,4 +11,5 @@ Podman Compose 安装器
 ./setup -i|install|-r|remove
   -i|install 安装
   -r|remove 卸载
+  -u|update 更新，亦即卸载并重新安装
 ```

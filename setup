@@ -63,7 +63,13 @@ case "$1" in
     __install
     ;;
   remove|-r)
-    __remove;;
+    __remove
+    ;;
+  update|-u)
+    echo "Updating..."
+    __remove
+    __install
+    ;;
   *)
-    echo -e "usage:\n\t$0 -i|install|-r|remove\n"
+    echo -e "usage:\n\t$0 -i|install|-r|remove|-u|update\n"
 esac
